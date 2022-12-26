@@ -51,7 +51,7 @@ INC_DIR = include
 EXE = run
 
 # Object files:
-OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/cuda_kernel.o $(OBJ_DIR)/data_generation.o
+OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/data_generation.o
 
 ##########################################################
 

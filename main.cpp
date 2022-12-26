@@ -2,7 +2,6 @@
 #include <iostream>
 
 // Include local CUDA header files.
-#include "include/cuda_kernel.cuh"
 #include "include/data_generation.cuh"
 
 #define MIN_VALUE -100
