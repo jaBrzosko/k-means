@@ -28,11 +28,11 @@ float* solveCPU(float* tab, int N, int dim, int k)
         }
     }
 
-    //int total = 0;
+    int total = 0;
     int count = 1;
     while(count)
     {
-        //total++;
+        total++;
         count = 0;
         // For every point in data set
         for(int i = 0; i < N; i++)
@@ -92,6 +92,6 @@ float* solveCPU(float* tab, int N, int dim, int k)
             }
         }
     }
-    //std::cout << "Total loops: " <<  total << std::endl;
+    std::cout << "Total loops for CPU: " <<  total << std::endl;
     return centroids;
 }

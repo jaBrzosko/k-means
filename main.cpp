@@ -6,7 +6,7 @@
 #include "include/solve_cpu.h"
 #include "include/solve_gpu.cuh"
 
-#define MIN_VALUE -100
+#define MIN_VALUE 0
 #define MAX_VALUE 100
 
 int main()

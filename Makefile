@@ -20,7 +20,7 @@ CC_LIBS=
 
 # NVCC compiler options:
 NVCC=nvcc
-NVCC_FLAGS=
+NVCC_FLAGS=-ccbin g++-10
 NVCC_LIBS=
 
 # CUDA library directory:
