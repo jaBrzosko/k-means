@@ -13,7 +13,7 @@ __global__ void findNewMean(float* position, float* centroids, int* indices, int
 
     float localSum = 0;
     int myStart = start[kIndex];
-    int myEnd = start[kIndex + 1];
+    int myEnd = kIndex != k - 1 ? start[kIndex + 1] : N;
 
     position += dimIndex * N;
 
@@ -21,13 +21,14 @@ __global__ void findNewMean(float* position, float* centroids, int* indices, int
     {
         localSum += position[indices[i]];
     }
-    centroids[dimIndex + kIndex * dim] = localSum / (myEnd - myStart);
+    centroids[kIndex + dimIndex * k] = localSum / (myEnd - myStart);
 }
 
 // if index changes value over neighbors update cellStart
-__global__ void prepareCellStart(int* indices, int* cellStart)
+__global__ void prepareCellStart(int* indices, int* cellStart, int N)
 {
     unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if(tid >= N) return;
     if(tid == 0)
         cellStart[indices[0]] = 0;
     else if(indices[tid] != indices[tid - 1])
@@ -36,9 +37,8 @@ __global__ void prepareCellStart(int* indices, int* cellStart)
 
 __global__ void resetIndicesAndCopyMembership(int* indices, int* membership, int* temp, int N)
 {
-    unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if(tid >= N)
-        return;
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if(tid >= N) return;
     indices[tid] = tid;
     temp[tid] = membership[tid];
 }
@@ -98,6 +98,9 @@ float* solveGPU(float* h_tab, int N, int dim, int k)
     cudaMalloc(&d_changed, N * sizeof(int));
     cudaMalloc(&d_index, N * sizeof(int));
     cudaMalloc(&d_start, k * sizeof(int));
+
+
+
     cudaMemcpy(d_tab, h_tab, N * dim * sizeof(float), cudaMemcpyHostToDevice);
 
     // Initialize centroid positions as first k point in tab
@@ -116,10 +119,10 @@ float* solveGPU(float* h_tab, int N, int dim, int k)
     
     dim3 gridK(k / 32 + (k % 1024 == 0 ? 0 : 1), dim / 32 + (dim % 1024 == 0 ? 0 : 1), 1);
     dim3 blockK(32, 32, 1);
-    
+
     int total = 0;
     // Main loop
-    while(1)
+    while(total <= 10000)
     {
         total++;
         // Calculate distances between all points and all centroids
@@ -132,7 +135,26 @@ float* solveGPU(float* h_tab, int N, int dim, int k)
         // Find new centroid positions
         resetIndicesAndCopyMembership<<<gridN, block>>>(d_index, d_membership, d_tempMembership, N);
         thrust::sort_by_key(thrust::device, d_tempMembership, d_tempMembership + N, d_index);
-        prepareCellStart<<<gridN, block>>>(d_index, d_start);
+        prepareCellStart<<<gridN, block>>>(d_tempMembership, d_start, N);
+        // {
+        //     int* debug = new int[N];
+        //     int* debugMember = new int[N];
+        //     int* debugStart = new int[k];
+        //     cudaMemcpy(debug, d_index, N * sizeof(int), cudaMemcpyDeviceToHost);
+        //     cudaMemcpy(debugMember, d_tempMembership, N * sizeof(int), cudaMemcpyDeviceToHost);
+        //     cudaMemcpy(debugStart, d_start, k * sizeof(int), cudaMemcpyDeviceToHost);
+        //     for(int i = 0; i < N; i++)
+        //     {
+        //         std::cout << i << ") " << debug[i] << " " << debugMember[i] << std::endl;
+        //     }
+        //     for(int i = 0; i < k; i++)
+        //     {
+        //         std::cout << i << ") " << debugStart[i] << std::endl;
+        //     }
+        //     return h_centroid;
+        // }
+
+
         findNewMean<<<gridK, blockK>>>(d_tab, d_centroid, d_index, d_start, N, k, dim);
     }
     std::cout << "Total loops for GPU: " <<  total << std::endl;
