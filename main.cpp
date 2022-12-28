@@ -14,7 +14,7 @@ using namespace std::chrono;
 
 int main()
 {
-    int N = 1000000;
+    int N = 10000;
     int dim = 2;
     int k = 16;
     float* tab = generateData(N, dim, MIN_VALUE, MAX_VALUE);

@@ -32,8 +32,19 @@ float* solveCPU(float* tab, int N, int dim, int k)
     int count = 1;
     while(count)
     {
+        // Reset centroid position accumulators
+        for(int i = 0; i < k * dim; i++)
+        {
+            tempCentroids[i] = 0;
+        }
+        // Reset centroid counter accumulators
+        for(int i = 0; i < k; i++)
+        {
+            membershipCount[i] = 0;
+        }
         total++;
         count = 0;
+
         // For every point in data set
         for(int i = 0; i < N; i++)
         {
@@ -57,26 +68,11 @@ float* solveCPU(float* tab, int N, int dim, int k)
                 count++;
                 membership[i] = bestCentroid;
             }
-        }
-        
-        // Reset centroid position accumulators
-        for(int i = 0; i < k * dim; i++)
-        {
-            tempCentroids[i] = 0;
-        }
-        // Reset centroid counter accumulators
-        for(int i = 0; i < k; i++)
-        {
-            membershipCount[i] = 0;
-        }
-
-        for(int i = 0; i < N; i++)
-        {
-            int myK = membership[i];
-            membershipCount[myK]++;
+            // Update position
+            membershipCount[bestCentroid]++;
             for(int j = 0; j < dim; j++)
             {
-                tempCentroids[myK + k * j] += tab[i + N * j];
+                tempCentroids[bestCentroid + k * j] += tab[i + N * j];
             }
         }
 
@@ -88,7 +84,7 @@ float* solveCPU(float* tab, int N, int dim, int k)
             //std::cout << "Centroid " << i << " has " << cnt << " members" << std::endl;
             for(int j = 0; j < dim; j++)
             {
-                centroids[i] = tempCentroids[i] / cnt;
+                centroids[i + j * k] = tempCentroids[i + j * k] / cnt;
             }
         }
     }
