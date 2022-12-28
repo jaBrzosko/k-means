@@ -3,7 +3,9 @@
 #include <thrust/reduce.h>
 #include <thrust/execution_policy.h>
 
-__global__ void findNewMean(float* position, float* centroids, int* indices, int* start, int N, int k, int dim)
+
+
+__global__ void divNewTab(float* centroid, float* newCentroid, int* count, int k, int dim)
 {
     unsigned int kIndex   = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned int dimIndex = threadIdx.y + blockIdx.y * blockDim.y;
@@ -11,17 +13,9 @@ __global__ void findNewMean(float* position, float* centroids, int* indices, int
     // Don't go over boundaries
     if(kIndex >= k || dimIndex >= dim) return;
 
-    float localSum = 0;
-    int myStart = start[kIndex];
-    int myEnd = kIndex != k - 1 ? start[kIndex + 1] : N;
-
-    position += dimIndex * N;
-
-    for(int i = myStart; i < myEnd; i++)
-    {
-        localSum += position[indices[i]];
-    }
-    centroids[kIndex + dimIndex * k] = localSum / (myEnd - myStart);
+    int cnt = count[kIndex];
+    if(cnt != 0)
+        centroid[kIndex + dimIndex * k] = newCentroid[kIndex + dimIndex * k] / cnt;
 }
 
 // if index changes value over neighbors update cellStart
@@ -43,7 +37,7 @@ __global__ void resetIndicesAndCopyMembership(int* indices, int* membership, int
     temp[tid] = membership[tid];
 }
 
-__global__ void calculateBestDistance(float* tab, float* kTab, int* membership, int* changed, int N, int k, int dim)
+__global__ void calculateBestDistance(float* tab, float* kTab, float* kNewTab, int* membership, int* kCount, int* changed, int N, int k, int dim)
 {
     unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if(tid >= N)
@@ -71,33 +65,34 @@ __global__ void calculateBestDistance(float* tab, float* kTab, int* membership, 
         }
     }
 
+    changed[tid] = 0;
     // Save better cluster
-    if(bestCentroid != membership[tid])
+    if(membership[tid] != bestCentroid)
     {
         membership[tid] = bestCentroid;
         changed[tid] = 1;
     }
-    else
+    atomicAdd(&kCount[bestCentroid], 1);
+    for(int i = 0; i < dim; i++)
     {
-        changed[tid] = 0;
+        atomicAdd(&kNewTab[bestCentroid + i * k], tab[tid + i * N]);
     }
 }
 
 float* solveGPU(float* h_tab, int N, int dim, int k)
 {
     // Allocate memory and prepare data
-    float *d_centroid, *d_tab;
-    int *d_membership, *d_changed, *d_index, *d_tempMembership;
-    int *d_start;
+    float *d_centroid, *d_tab, *d_newCentroid;
+    int *d_membership, *d_changed;
+    int *d_count;
     float *h_centroid = new float[dim * k];
 
     cudaMalloc(&d_centroid, dim * k * sizeof(float));
+    cudaMalloc(&d_newCentroid, dim * k * sizeof(float));
     cudaMalloc(&d_tab, dim * N * sizeof(float));
     cudaMalloc(&d_membership, N * sizeof(int));
-    cudaMalloc(&d_tempMembership, N * sizeof(int));
     cudaMalloc(&d_changed, N * sizeof(int));
-    cudaMalloc(&d_index, N * sizeof(int));
-    cudaMalloc(&d_start, k * sizeof(int));
+    cudaMalloc(&d_count, k * sizeof(int));
 
 
 
@@ -126,40 +121,33 @@ float* solveGPU(float* h_tab, int N, int dim, int k)
     {
         total++;
         // Calculate distances between all points and all centroids
-        calculateBestDistance<<<gridN, block>>>(d_tab, d_centroid, d_membership, d_changed, N, k, dim);
+        cudaMemset(d_newCentroid, 0, k * dim * sizeof(float));
+        cudaMemset(d_count, 0, k * sizeof(int));
+        calculateBestDistance<<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k, dim);
+        // {
+        //     int* debug = new int[k];
+        //     cudaMemcpy(debug, d_count, k * sizeof(int), cudaMemcpyDeviceToHost);
+        //     for(int i = 0; i < k; i++)
+        //     {
+        //         std::cout << i << ") " << debug[i] << std::endl;
+        //     }
+        // }
         int totalChanged = thrust::reduce(thrust::device, d_changed, d_changed + N, 0);
         //std::cout << "Total changed " << totalChanged << std::endl;
         if(!totalChanged)
             break;
-
-        // Find new centroid positions
-        resetIndicesAndCopyMembership<<<gridN, block>>>(d_index, d_membership, d_tempMembership, N);
-        thrust::sort_by_key(thrust::device, d_tempMembership, d_tempMembership + N, d_index);
-        prepareCellStart<<<gridN, block>>>(d_tempMembership, d_start, N);
-        // {
-        //     int* debug = new int[N];
-        //     int* debugMember = new int[N];
-        //     int* debugStart = new int[k];
-        //     cudaMemcpy(debug, d_index, N * sizeof(int), cudaMemcpyDeviceToHost);
-        //     cudaMemcpy(debugMember, d_tempMembership, N * sizeof(int), cudaMemcpyDeviceToHost);
-        //     cudaMemcpy(debugStart, d_start, k * sizeof(int), cudaMemcpyDeviceToHost);
-        //     for(int i = 0; i < N; i++)
-        //     {
-        //         std::cout << i << ") " << debug[i] << " " << debugMember[i] << std::endl;
-        //     }
-        //     for(int i = 0; i < k; i++)
-        //     {
-        //         std::cout << i << ") " << debugStart[i] << std::endl;
-        //     }
-        //     return h_centroid;
-        // }
-
-
-        findNewMean<<<gridK, blockK>>>(d_tab, d_centroid, d_index, d_start, N, k, dim);
+        divNewTab<<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k, dim);
     }
     std::cout << "Total loops for GPU: " <<  total << std::endl;
 
     cudaMemcpy(h_centroid, d_centroid, dim * k * sizeof(float), cudaMemcpyDeviceToHost);
+
+    cudaFree(d_centroid);
+    cudaFree(d_newCentroid);
+    cudaFree(d_tab);
+    cudaFree(d_membership);
+    cudaFree(d_changed);
+    cudaFree(d_count);
 
     return h_centroid;
 }
