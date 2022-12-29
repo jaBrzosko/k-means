@@ -9,14 +9,15 @@
 
 #define MIN_VALUE 0
 #define MAX_VALUE 100
+#define DIFF_EPS 0.001f
 
 using namespace std::chrono;
 
 int main()
 {
     int N = 10000;
-    int dim = 2;
-    int k = 16;
+    int dim = 8;
+    int k = 32;
     float* tab = generateData(N, dim, MIN_VALUE, MAX_VALUE);
     
     auto start = high_resolution_clock::now();
@@ -31,20 +32,49 @@ int main()
     duration = duration_cast<microseconds>(stop - start);
     std::cout << "GPU time duration: " << duration.count() / 1000 << "ms" << std::endl;
 
+    int okCount = 0;
     for(int i = 0; i < k; i++)
     {
         std::cout << "Centroid number " << i << std::endl;
-        std::cout << "CPU: ";
+        bool isOk = true;
         for(int j = 0; j < dim; j++)
         {
-            std::cout << kCPU[i + dim * j] << " ";
+            if(kCPU[i + dim * j] - kGPU[i + dim * j] > DIFF_EPS)
+            {
+                isOk = false;
+                break;
+            }
         }
-        std::cout << std::endl << "GPU: ";
-        for(int j = 0; j < dim; j++)
+        if(isOk)
         {
-            std::cout << kGPU[i + dim * j] << " ";
+            std::cout << "\033[1;32mOK\033[0m" << std::endl;
+            okCount++;
         }
-        std::cout << std::endl;
+        else
+        {
+            std::cout << "\033[1;31m---WRONG---" << std::endl;
+
+            std::cout << "CPU: ";
+            for(int j = 0; j < dim; j++)
+            {
+                std::cout << kCPU[i + dim * j] << " ";
+            }
+            std::cout << std::endl << "GPU: ";
+            for(int j = 0; j < dim; j++)
+            {
+                std::cout << kGPU[i + dim * j] << " ";
+            }
+            std::cout << "\033[0m" << std::endl;
+        }
+    }
+
+    if(okCount == k)
+    {
+        std::cout << "\033[1;32mEvery centorid matches " << okCount << "/" << k << "\033[0m" << std::endl;
+    }
+    else
+    {
+        std::cout << "\033[1;31mSome centroids are not the same " << okCount << "/" << k << "\033[0m" << std::endl;
     }
 
     return 0;

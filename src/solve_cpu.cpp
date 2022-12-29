@@ -89,5 +89,10 @@ float* solveCPU(float* tab, int N, int dim, int k)
         }
     }
     std::cout << "Total loops for CPU: " <<  total << std::endl;
+
+    delete tempCentroids;
+    delete membership;
+    delete membershipCount;
+    
     return centroids;
 }
