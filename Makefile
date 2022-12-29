@@ -51,7 +51,7 @@ INC_DIR = include
 EXE = run
 
 # Object files:
-OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/data_generation.o $(OBJ_DIR)/solve_cpu.o $(OBJ_DIR)/solve_gpu.o
+OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/data_generation.o $(OBJ_DIR)/solve_cpu.o $(OBJ_DIR)/solve_gpu.o $(OBJ_DIR)/solve_gpu2.o
 
 ##########################################################
 

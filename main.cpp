@@ -9,7 +9,7 @@
 
 #define MIN_VALUE 0
 #define MAX_VALUE 100
-#define DIFF_EPS 0.001f
+#define DIFF_EPS 0.00001f
 
 using namespace std::chrono;
 
@@ -39,7 +39,7 @@ int main()
         bool isOk = true;
         for(int j = 0; j < dim; j++)
         {
-            if(kCPU[i + dim * j] - kGPU[i + dim * j] > DIFF_EPS)
+            if(abs(kCPU[i + dim * j] - kGPU[i + dim * j]) > DIFF_EPS)
             {
                 isOk = false;
                 break;
