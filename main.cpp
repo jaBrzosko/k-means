@@ -6,6 +6,7 @@
 #include "include/data_generation.cuh"
 #include "include/solve_cpu.h"
 #include "include/solve_gpu.cuh"
+#include "include/solve_gpu2.cuh"
 
 #define MIN_VALUE 0
 #define MAX_VALUE 100
@@ -15,7 +16,7 @@ using namespace std::chrono;
 
 int main()
 {
-    int N = 10000;
+    int N = 100000;
     int dim = 8;
     int k = 32;
     float* tab = generateData(N, dim, MIN_VALUE, MAX_VALUE);
@@ -30,7 +31,13 @@ int main()
     float* kGPU = solveGPU(tab, N, dim, k);
     stop = high_resolution_clock::now();
     duration = duration_cast<microseconds>(stop - start);
-    std::cout << "GPU time duration: " << duration.count() / 1000 << "ms" << std::endl;
+    std::cout << "GPU1 time duration: " << duration.count() / 1000 << "ms" << std::endl;
+
+    start = high_resolution_clock::now();
+    float* kGPU2 = solveGPU(tab, N, dim, k);
+    stop = high_resolution_clock::now();
+    duration = duration_cast<microseconds>(stop - start);
+    std::cout << "GPU2 time duration: " << duration.count() / 1000 << "ms" << std::endl;
 
     int okCount = 0;
     for(int i = 0; i < k; i++)
@@ -39,7 +46,7 @@ int main()
         bool isOk = true;
         for(int j = 0; j < dim; j++)
         {
-            if(abs(kCPU[i + dim * j] - kGPU[i + dim * j]) > DIFF_EPS)
+            if(abs(kCPU[i + dim * j] - kGPU[i + dim * j]) > DIFF_EPS || abs(kCPU[i + dim * j] - kGPU2[i + dim * j]) > DIFF_EPS)
             {
                 isOk = false;
                 break;
@@ -59,10 +66,17 @@ int main()
             {
                 std::cout << kCPU[i + dim * j] << " ";
             }
-            std::cout << std::endl << "GPU: ";
+
+            std::cout << std::endl << "GPU1: ";
             for(int j = 0; j < dim; j++)
             {
                 std::cout << kGPU[i + dim * j] << " ";
+            }
+
+            std::cout << std::endl << "GPU2: ";
+            for(int j = 0; j < dim; j++)
+            {
+                std::cout << kGPU2[i + dim * j] << " ";
             }
             std::cout << "\033[0m" << std::endl;
         }

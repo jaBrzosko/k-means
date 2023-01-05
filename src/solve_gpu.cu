@@ -138,7 +138,7 @@ float* solveGPU(float* h_tab, int N, int dim, int k)
             break;
         divNewTab<<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k, dim);
     }
-    std::cout << "Total loops for GPU: " <<  total << std::endl;
+    std::cout << "Total loops for GPU1: " <<  total << std::endl;
 
     cudaMemcpy(h_centroid, d_centroid, dim * k * sizeof(float), cudaMemcpyDeviceToHost);
 
