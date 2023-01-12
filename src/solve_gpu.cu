@@ -112,7 +112,7 @@ float* solveGPU(float* h_tab, int N, int dim, int k)
     int block = 1024;
     int gridN = N / 1024 + (N % 1024 == 0 ? 0 : 1);
     
-    dim3 gridK(k / 32 + (k % 1024 == 0 ? 0 : 1), dim / 32 + (dim % 1024 == 0 ? 0 : 1), 1);
+    dim3 gridK(k / 32 + (k % 32 == 0 ? 0 : 1), dim / 32 + (dim % 32 == 0 ? 0 : 1), 1);
     dim3 blockK(32, 32, 1);
 
     int total = 0;

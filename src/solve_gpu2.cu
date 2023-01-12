@@ -3,8 +3,6 @@
 #include <thrust/reduce.h>
 #include <thrust/execution_policy.h>
 
-
-
 __global__ void divNewTab2(float* centroid, float* newCentroid, int* count, int k, int dim)
 {
     unsigned int kIndex   = threadIdx.x + blockIdx.x * blockDim.x;
@@ -16,6 +14,43 @@ __global__ void divNewTab2(float* centroid, float* newCentroid, int* count, int 
     int cnt = count[kIndex];
     if(cnt != 0)
         centroid[kIndex + dimIndex * k] = newCentroid[kIndex + dimIndex * k] / cnt;
+}
+
+__global__ void initProperTables(float* tab, float* kTab, float* kNewTab, int* membership, int* kCount, int N, int k, int dim)
+{
+    unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if(tid >= N)
+        return;
+    float bestDistance = FLT_MAX;
+    int bestCentroid = -1;
+    
+    // Check every cluster
+    for(int i = 0; i < k; i++)
+    {
+        // Calculate distance to this cluster
+        float d = 0;
+        for(int j = 0; j < dim; j++)
+        {
+            float point = tab[tid + j * N];
+            float centroid = kTab[i + j * k];
+            d += (point - centroid) * (point - centroid);
+        }
+
+        // Check if it is closer
+        if(d < bestDistance)
+        {
+            bestDistance = d;
+            bestCentroid = i;
+        }
+    }
+    
+    membership[tid] = bestCentroid;
+    atomicAdd(&kCount[bestCentroid], 1);
+
+    for(int i = 0; i < dim; i++)
+    {
+        atomicAdd(&kNewTab[bestCentroid + i * k], tab[tid + i * N]);
+    }
 }
 
 __global__ void calculateBestDistance2(float* tab, float* kTab, float* kNewTab, int* membership, int* kCount, int* changed, int N, int k, int dim)
@@ -46,18 +81,25 @@ __global__ void calculateBestDistance2(float* tab, float* kTab, float* kNewTab, 
         }
     }
 
-    changed[tid] = 0;
     // Save better cluster
-    if(membership[tid] != bestCentroid)
+    int previousCentroid = membership[tid];
+    if(previousCentroid != bestCentroid)
     {
         membership[tid] = bestCentroid;
         changed[tid] = 1;
+        
+        // Add one to new centroid
+        atomicAdd(&kCount[bestCentroid], 1);
+        atomicAdd(&kCount[previousCentroid], -1);
+        for(int i = 0; i < dim; i++)
+        {
+            float v = tab[tid + i * N];
+            atomicAdd(&kNewTab[bestCentroid + i * k], v);
+            atomicAdd(&kNewTab[previousCentroid + i * k], -v);
+        }
+        return;
     }
-    atomicAdd(&kCount[bestCentroid], 1);
-    for(int i = 0; i < dim; i++)
-    {
-        atomicAdd(&kNewTab[bestCentroid + i * k], tab[tid + i * N]);
-    }
+    changed[tid] = 0;
 }
 
 float* solveGPU2(float* h_tab, int N, int dim, int k)
@@ -93,17 +135,66 @@ float* solveGPU2(float* h_tab, int N, int dim, int k)
     int block = 1024;
     int gridN = N / 1024 + (N % 1024 == 0 ? 0 : 1);
     
-    dim3 gridK(k / 32 + (k % 1024 == 0 ? 0 : 1), dim / 32 + (dim % 1024 == 0 ? 0 : 1), 1);
+    dim3 gridK(k / 32 + (k % 32 == 0 ? 0 : 1), dim / 32 + (dim % 32 == 0 ? 0 : 1), 1);
     dim3 blockK(32, 32, 1);
 
-    int total = 0;
+    // Prepare init data
+    int total = 1;
+    cudaMemset(d_count, 0, k * sizeof(int));
+    initProperTables<<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, N, k, dim);
+    
+    // {
+    //     float* debug = new float[k * dim];
+    //     cudaMemcpy(debug, d_centroid, k * dim * sizeof(float), cudaMemcpyDeviceToHost);
+    //     for(int i = 0; i < k; i++)
+    //     {
+    //         std::cout << i << "PRE) ";
+    //         for(int j = 0; j < dim; j++)
+    //         {
+    //             std::cout << debug[i + k * j] << " ";
+    //         }
+    //         std::cout << std::endl;
+    //     }
+    // }
+        
+    // {
+    //     float* debug = new float[k * dim];
+    //     float* debug2 = new float[k * dim];
+    //     cudaMemcpy(debug, d_centroid, k * dim * sizeof(float), cudaMemcpyDeviceToHost);
+    //     cudaMemcpy(debug2, d_newCentroid, k * dim * sizeof(float), cudaMemcpyDeviceToHost);
+    //     for(int i = 0; i < k; i++)
+    //     {
+    //         std::cout << i << "DIV) ";
+    //         for(int j = 0; j < dim; j++)
+    //         {
+    //             std::cout << debug[i + k * j] << " ";
+    //         }
+    //         std::cout << std::endl;
+    //         std::cout << i << "SUM) ";
+    //         for(int j = 0; j < dim; j++)
+    //         {
+    //             std::cout << debug2[i + k * j] << " ";
+    //         }
+    //         std::cout << std::endl; 
+    //     }
+    //     return nullptr;
+    // }
+
+    // {
+    //     int* debug = new int[N];
+    //     cudaMemcpy(debug, d_membership, N * sizeof(int), cudaMemcpyDeviceToHost);
+    //     for(int i = 0; i < N; i++)
+    //     {
+    //         std::cout << i << ") " << debug[i] << std::endl;
+    //     }
+    // }
     // Main loop
     while(total <= 10000)
     {
         total++;
         // Calculate distances between all points and all centroids
-        cudaMemset(d_newCentroid, 0, k * dim * sizeof(float));
-        cudaMemset(d_count, 0, k * sizeof(int));
+        
+        divNewTab2<<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k, dim);
         calculateBestDistance2<<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k, dim);
         // {
         //     int* debug = new int[k];
@@ -112,12 +203,12 @@ float* solveGPU2(float* h_tab, int N, int dim, int k)
         //     {
         //         std::cout << i << ") " << debug[i] << std::endl;
         //     }
+        //     return nullptr;
         // }
+
         int totalChanged = thrust::reduce(thrust::device, d_changed, d_changed + N, 0);
-        //std::cout << "Total changed " << totalChanged << std::endl;
         if(!totalChanged)
             break;
-        divNewTab2<<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k, dim);
     }
     std::cout << "Total loops for GPU2: " <<  total << std::endl;
 
