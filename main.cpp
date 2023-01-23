@@ -133,7 +133,7 @@ int main(int argc, char** argv)
     std::cout << "N=" << N << " k=" << k << " n=" << dim << std::endl;
     std::cout << std::endl;
 
-    std::cout << "CPU time duration: " << durationCPU.count() / 1000 << "ms" << std::endl;
+    std::cout << "CPU  time duration: " << durationCPU.count() / 1000 << "ms" << std::endl;
     std::cout << "GPU1 time duration: " << durationGPU1.count() / 1000 << "ms" << std::endl;
     std::cout << "GPU2 time duration: " << durationGPU2.count() / 1000 << "ms" << std::endl;
     std::cout << std::endl;
