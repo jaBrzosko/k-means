@@ -3,7 +3,8 @@
 #include <thrust/reduce.h>
 #include <thrust/execution_policy.h>
 
-__global__ void divNewTab2(float* centroid, float* newCentroid, int* count, int k, int dim)
+template<int dim>
+__global__ void divNewTab2(float* centroid, float* newCentroid, int* count, int k)
 {
     unsigned int kIndex   = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned int dimIndex = threadIdx.y + blockIdx.y * blockDim.y;
@@ -53,7 +54,8 @@ __global__ void initProperTables(float* tab, float* kTab, float* kNewTab, int* m
     }
 }
 
-__global__ void calculateBestDistance2(float* tab, float* kTab, float* kNewTab, int* membership, int* kCount, int* changed, int N, int k, int dim)
+template<int dim> 
+__global__ void calculateBestDistance2(float* tab, float* kTab, float* kNewTab, int* membership, int* kCount, int* changed, int N, int k)
 {
     unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if(tid >= N)
@@ -102,6 +104,205 @@ __global__ void calculateBestDistance2(float* tab, float* kTab, float* kNewTab, 
     changed[tid] = 0;
 }
 
+void runCudaFunctions(float* d_tab, float* d_centroid, float* d_newCentroid, int* d_membership, int* d_count, int* d_changed, 
+                int N, int k, int dim, int gridN, dim3 gridK, int block, dim3 blockK)
+{
+    switch(dim)
+    {
+        case 1:
+        {
+            divNewTab2<1><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<1><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 2:
+        {
+            divNewTab2<2><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<2><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 3:
+        {
+            divNewTab2<3><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<3><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 4:
+        {
+            divNewTab2<4><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<4><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 5:
+        {
+            divNewTab2<5><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<5><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 6:
+        {
+            divNewTab2<6><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<6><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 7:
+        {
+            divNewTab2<7><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<7><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 8:
+        {
+            divNewTab2<8><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<8><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 9:
+        {
+            divNewTab2<9><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<9><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 10:
+        {
+            divNewTab2<10><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<10><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 11:
+        {
+            divNewTab2<11><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<11><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 12:
+        {
+            divNewTab2<12><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<12><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 13:
+        {
+            divNewTab2<13><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<13><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 14:
+        {
+            divNewTab2<14><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<14><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 15:
+        {
+            divNewTab2<15><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<15><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 16:
+        {
+            divNewTab2<16><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<16><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 17:
+        {
+            divNewTab2<17><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<17><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 18:
+        {
+            divNewTab2<18><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<18><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 19:
+        {
+            divNewTab2<19><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<19><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 20:
+        {
+            divNewTab2<20><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<20><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 21:
+        {
+            divNewTab2<21><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<21><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 22:
+        {
+            divNewTab2<22><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<22><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 23:
+        {
+            divNewTab2<23><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<23><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 24:
+        {
+            divNewTab2<24><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<24><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 25:
+        {
+            divNewTab2<25><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<25><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 26:
+        {
+            divNewTab2<26><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<26><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 27:
+        {
+            divNewTab2<27><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<27><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 28:
+        {
+            divNewTab2<28><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<28><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 29:
+        {
+            divNewTab2<29><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<29><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 30:
+        {
+            divNewTab2<30><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<30><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 31:
+        {
+            divNewTab2<31><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<31><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+        case 32:
+        {
+            divNewTab2<32><<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k);
+            calculateBestDistance2<32><<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k);
+            break;
+        }
+    }
+}
 float* solveGPU2(float* h_tab, int N, int dim, int k)
 {
     // Allocate memory and prepare data
@@ -142,69 +343,13 @@ float* solveGPU2(float* h_tab, int N, int dim, int k)
     int total = 1;
     cudaMemset(d_count, 0, k * sizeof(int));
     initProperTables<<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, N, k, dim);
-    
-    // {
-    //     float* debug = new float[k * dim];
-    //     cudaMemcpy(debug, d_centroid, k * dim * sizeof(float), cudaMemcpyDeviceToHost);
-    //     for(int i = 0; i < k; i++)
-    //     {
-    //         std::cout << i << "PRE) ";
-    //         for(int j = 0; j < dim; j++)
-    //         {
-    //             std::cout << debug[i + k * j] << " ";
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    // }
-        
-    // {
-    //     float* debug = new float[k * dim];
-    //     float* debug2 = new float[k * dim];
-    //     cudaMemcpy(debug, d_centroid, k * dim * sizeof(float), cudaMemcpyDeviceToHost);
-    //     cudaMemcpy(debug2, d_newCentroid, k * dim * sizeof(float), cudaMemcpyDeviceToHost);
-    //     for(int i = 0; i < k; i++)
-    //     {
-    //         std::cout << i << "DIV) ";
-    //         for(int j = 0; j < dim; j++)
-    //         {
-    //             std::cout << debug[i + k * j] << " ";
-    //         }
-    //         std::cout << std::endl;
-    //         std::cout << i << "SUM) ";
-    //         for(int j = 0; j < dim; j++)
-    //         {
-    //             std::cout << debug2[i + k * j] << " ";
-    //         }
-    //         std::cout << std::endl; 
-    //     }
-    //     return nullptr;
-    // }
 
-    // {
-    //     int* debug = new int[N];
-    //     cudaMemcpy(debug, d_membership, N * sizeof(int), cudaMemcpyDeviceToHost);
-    //     for(int i = 0; i < N; i++)
-    //     {
-    //         std::cout << i << ") " << debug[i] << std::endl;
-    //     }
-    // }
     // Main loop
     while(total <= 10000)
     {
         total++;
         // Calculate distances between all points and all centroids
-        
-        divNewTab2<<<gridK, blockK>>>(d_centroid, d_newCentroid, d_count, k, dim);
-        calculateBestDistance2<<<gridN, block>>>(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k, dim);
-        // {
-        //     int* debug = new int[k];
-        //     cudaMemcpy(debug, d_count, k * sizeof(int), cudaMemcpyDeviceToHost);
-        //     for(int i = 0; i < k; i++)
-        //     {
-        //         std::cout << i << ") " << debug[i] << std::endl;
-        //     }
-        //     return nullptr;
-        // }
+        runCudaFunctions(d_tab, d_centroid, d_newCentroid, d_membership, d_count, d_changed, N, k, dim, gridN, gridK, block, blockK);
 
         int totalChanged = thrust::reduce(thrust::device, d_changed, d_changed + N, 0);
         if(!totalChanged)

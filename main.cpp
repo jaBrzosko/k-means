@@ -63,7 +63,7 @@ int main(int argc, char** argv)
     float* tab = generateData(N, dim, MIN_VALUE, MAX_VALUE);
     
     auto start = high_resolution_clock::now();
-    float* kCPU = solveCPU(tab, N, dim, k);
+    float* kCPU = solveGPU(tab, N, dim, k);
     auto stop = high_resolution_clock::now();
     auto durationCPU = duration_cast<microseconds>(stop - start);
     
@@ -77,57 +77,57 @@ int main(int argc, char** argv)
     stop = high_resolution_clock::now();
     auto durationGPU2 = duration_cast<microseconds>(stop - start);
 
-    int okCount = 0;
-    for(int i = 0; i < k; i++)
-    {
-        std::cout << "Centroid number " << i << std::endl;
-        bool isOk = true;
-        for(int j = 0; j < dim; j++)
-        {
-            if(myAbs(kCPU[i + k * j] - kGPU[i + k * j]) > DIFF_EPS || myAbs(kCPU[i + k * j] - kGPU2[i + k * j]) > DIFF_EPS)
-            {
-                isOk = false;
-                break;
-            }
-        }
-        if(isOk)
-        {
-            std::cout << "\033[1;32mOK\033[0m" << std::endl;
-            okCount++;
-        }
-        else
-        {
-            std::cout << "\033[1;31m---WRONG---" << std::endl;
+    // int okCount = 0;
+    // for(int i = 0; i < k; i++)
+    // {
+    //     std::cout << "Centroid number " << i << std::endl;
+    //     bool isOk = true;
+    //     for(int j = 0; j < dim; j++)
+    //     {
+    //         if(myAbs(kCPU[i + k * j] - kGPU[i + k * j]) > DIFF_EPS || myAbs(kCPU[i + k * j] - kGPU2[i + k * j]) > DIFF_EPS)
+    //         {
+    //             isOk = false;
+    //             break;
+    //         }
+    //     }
+    //     if(isOk)
+    //     {
+    //         std::cout << "\033[1;32mOK\033[0m" << std::endl;
+    //         okCount++;
+    //     }
+    //     else
+    //     {
+    //         std::cout << "\033[1;31m---WRONG---" << std::endl;
 
-            std::cout << "CPU: ";
-            for(int j = 0; j < dim; j++)
-            {
-                std::cout << kCPU[i + k * j] << " ";
-            }
+    //         std::cout << "CPU: ";
+    //         for(int j = 0; j < dim; j++)
+    //         {
+    //             std::cout << kCPU[i + k * j] << " ";
+    //         }
 
-            std::cout << std::endl << "GPU1: ";
-            for(int j = 0; j < dim; j++)
-            {
-                std::cout << kGPU[i + k * j] << " ";
-            }
+    //         std::cout << std::endl << "GPU1: ";
+    //         for(int j = 0; j < dim; j++)
+    //         {
+    //             std::cout << kGPU[i + k * j] << " ";
+    //         }
 
-            std::cout << std::endl << "GPU2: ";
-            for(int j = 0; j < dim; j++)
-            {
-                std::cout << kGPU2[i + k * j] << " ";
-            }
-            std::cout << "\033[0m" << std::endl;
-        }
-    }
+    //         std::cout << std::endl << "GPU2: ";
+    //         for(int j = 0; j < dim; j++)
+    //         {
+    //             std::cout << kGPU2[i + k * j] << " ";
+    //         }
+    //         std::cout << "\033[0m" << std::endl;
+    //     }
+    // }
 
-    if(okCount == k)
-    {
-        std::cout << "\033[1;32mEvery centorid matches " << okCount << "/" << k << "\033[0m" << std::endl;
-    }
-    else
-    {
-        std::cout << "\033[1;31mSome centroids are not the same " << okCount << "/" << k << "\033[0m" << std::endl;
-    }
+    // if(okCount == k)
+    // {
+    //     std::cout << "\033[1;32mEvery centorid matches " << okCount << "/" << k << "\033[0m" << std::endl;
+    // }
+    // else
+    // {
+    //     std::cout << "\033[1;31mSome centroids are not the same " << okCount << "/" << k << "\033[0m" << std::endl;
+    // }
 
     std::cout << std::endl << "Parameters:" << std::endl;
     std::cout << "N=" << N << " k=" << k << " n=" << dim << std::endl;

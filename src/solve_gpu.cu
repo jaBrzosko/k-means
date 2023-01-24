@@ -467,14 +467,6 @@ float* solveGPU(float* h_tab, int N, int dim, int k)
             break;
 
         runDivNewTab(d_centroid, d_newCentroid, d_count, k, dim, gridK, blockK);
-
-        switch(dim)
-        {
-            case 8:
-            {
-                break;
-            }
-        }
     }
     std::cout << "Total loops for GPU1: " <<  total << std::endl;
 
